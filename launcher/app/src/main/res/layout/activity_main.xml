@@ -147,7 +147,7 @@
                 <TextView
                     android:id="@+id/btnCalendar"
                     style="@style/TopButton"
-                    android:text="Calendar"
+                    android:text="Calendario"
                     android:drawableStart="@drawable/ic_calendar" />
 
                 <TextView

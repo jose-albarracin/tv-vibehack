@@ -405,7 +405,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
         tvCalMonthYear.setText(sdf.format(cal.getTime()));
-        tvCalSubtitle.setText(todayDay + " " + new SimpleDateFormat("MMMM", Locale.getDefault()).format(cal.getTime()).toUpperCase(Locale.getDefault()) + " — No scheduled events");
+        tvCalSubtitle.setText(todayDay + " " + new SimpleDateFormat("MMMM", Locale.getDefault()).format(cal.getTime()).toUpperCase(Locale.getDefault()) + " — Sin eventos");
 
         calGridTable.removeAllViews();
 
@@ -475,7 +475,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                                 tvCalSubtitle.setText(OCT_EVENTS.get(d).title);
                                 tvCalSubtitle.setTextColor(OCT_EVENTS.get(d).color);
                             } else {
-                                tvCalSubtitle.setText(d + " " + sdf.format(cal.getTime()).toUpperCase(Locale.getDefault()) + " — No scheduled events");
+                                tvCalSubtitle.setText(d + " " + sdf.format(cal.getTime()).toUpperCase(Locale.getDefault()) + " — Sin eventos");
                                 tvCalSubtitle.setTextColor(0xFF38BDF8);
                             }
                         }
@@ -758,7 +758,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         try {
             startActivity(i);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "Not available on this TV", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No disponible en esta TV", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -883,7 +883,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         }
 
-        if (btnCalendar != null) btnCalendar.setText(showText ? "Calendar" : "");
+        if (btnCalendar != null) btnCalendar.setText(showText ? "Calendario" : "");
         if (btnSettings != null) btnSettings.setText(showText ? getString(R.string.settings) : "");
         updateWifiLabel();
     }

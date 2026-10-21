@@ -114,7 +114,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
             String label = String.valueOf(ri.loadLabel(pm));
             fresh.add(new Entry(label, new ComponentName(pkg, ri.activityInfo.name), banner, icon));
         }
-        fresh.add(new Entry("Inputs", new ComponentName("com.gathin.tvhome.inputs", "InputsActivity"),
+        fresh.add(new Entry(ctx.getString(R.string.inputs), new ComponentName("com.gathin.tvhome.inputs", "InputsActivity"),
                 ctx.getDrawable(R.drawable.banner_inputs), ctx.getDrawable(R.drawable.ic_input)));
 
         // Row 0: Dock Core Apps
@@ -234,7 +234,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
                         fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         ctx.startActivity(fallback);
                     } else {
-                        Toast.makeText(ctx, "Stremio yüklü değil", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ctx, "Stremio no está instalado", Toast.LENGTH_SHORT).show();
                     }
                 }
             } else {
