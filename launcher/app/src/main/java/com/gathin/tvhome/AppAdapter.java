@@ -141,37 +141,13 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
             otherApps.add(0, row0.remove(row0.size() - 1));
         }
 
-        // Row 1: Stremio Quick Stream Shelf
-        List<Entry> stremioRow = new ArrayList<>();
-        stremioRow.add(new Entry("Deadpool & Wolverine", null,
-                ctx.getDrawable(R.drawable.banner_stremio_deadpool), null,
-                true, "movie", "tt6263850", 0xFFDC2626));
-        stremioRow.add(new Entry("Spider-Man: Across Spider-Verse", null,
-                ctx.getDrawable(R.drawable.banner_stremio_spiderman), null,
-                true, "movie", "tt9362722", 0xFF9333EA));
-        stremioRow.add(new Entry("Dune: Part Two", null,
-                ctx.getDrawable(R.drawable.banner_stremio_dune), null,
-                true, "movie", "tt15239678", 0xFFD97706));
-        stremioRow.add(new Entry("The Penguin", null,
-                ctx.getDrawable(R.drawable.banner_stremio_penguin), null,
-                true, "series", "tt15435876", 0xFF0284C7));
-        stremioRow.add(new Entry("Breaking Bad", null,
-                ctx.getDrawable(R.drawable.banner_stremio_breakingbad), null,
-                true, "series", "tt0903747", 0xFF059669));
-
-        for (Entry e : stremioRow) {
-            if (e.stremioId != null && POSTER_CACHE.containsKey(e.stremioId)) {
-                e.posterBitmap = POSTER_CACHE.get(e.stremioId);
-            }
-        }
+        // Sin estante de Stremio: solo dock + todas las apps (version limpia para la TCL).
 
         items.clear();
         items.addAll(row0);
-        items.addAll(stremioRow);
         items.addAll(otherApps);
         notifyDataSetChanged();
 
-        fetchStremioPostersAsync(stremioRow);
     }
 
     private void fetchStremioPostersAsync(List<Entry> entries) {

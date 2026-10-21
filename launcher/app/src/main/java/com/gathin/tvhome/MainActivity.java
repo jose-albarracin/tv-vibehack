@@ -259,10 +259,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             int code = event.getKeyCode();
-            if (isPurpleOrMediaKey(code)) {
-                launchStremio();
-                return true;
-            }
+            // Teclas multimedia sin remapear: Play/Pausa y botones de colores funcionan normal.
         }
         return super.dispatchKeyEvent(event);
     }
@@ -316,7 +313,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         View focused = getCurrentFocus();
         if (focused != null && focused.getId() == R.id.card) {
-            if (lastFocused >= COLUMNS * 2) {
+            if (lastFocused >= COLUMNS) {
                 // Return from apps grid to the dock
                 focusTile(0);
             } else {

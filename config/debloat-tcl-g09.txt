@@ -1,0 +1,42 @@
+# TCL 55" Google TV "Smart TV Pro" (device G09), Android TV 12, build STT2.230203.001.AS24
+# Lista de Jose Daniel, 2026-10-21. Base: examples/tcl-g10-google-tv + revision de paquetes de esta TV.
+# Todo se DESACTIVA, no se desinstala. Para deshacer:
+#   restore: tools\venv\Scripts\python.exe tools\tv.py "pm enable <paquete>"
+#   o todo:  tools\restore.ps1 -TvHost 192.168.128.6 config\debloat-tcl-g09.txt -Stock com.google.android.apps.tv.launcherx
+# Se conservan: com.tcl.tv, com.tcl.tvinput, com.tcl.dashboard, com.tcl.suspension (menu de entradas),
+# com.tcl.autopair, com.tcl.systemserver, com.tcl.ui_mediaCenter (USB), com.google.android.katniss (voz),
+# apps de streaming y apps instaladas por Jose Daniel.
+
+# Contenido, anuncios y promos de TCL
+com.tcl.channelplus                    # canales TCL Live
+com.tcl.tv.tclhome_passive             # empuja contenido de TCL al inicio
+com.tcl.partnercustomizer              # filas de TCL en el inicio de Google TV
+com.tcl.interactive                    # servicio TIAS en segundo plano
+com.tcl.smartlink.core                 # instalador silencioso de apps
+com.tcl.waterfall.overseas             # catalogo de peliculas de TCL
+com.tcl.messagebox                     # mensajes/promos de TCL
+com.tcl.exhibit                        # modo tienda
+com.tcl.esticker                       # stickers del modo tienda
+com.tcl.ocean.instructions             # manual electronico
+com.tcl.repairguide
+
+# Telemetria
+com.tcl.logkit                         # captura y sube logs
+com.tcl.ttvs                           # BI / awareness / Samba (viene desactivado de fabrica en el G10)
+
+# Funciones que no usa
+com.tcl.gamebar                        # barra de juego
+com.tcl.UpdatePeripheral               # actualizar barra de sonido TCL
+com.tcl.smartalexa                     # Alexa (usa el asistente de Google)
+com.tcl.magiconnectfree                # T-Cast, app del celular
+com.tcl.miracast                       # proyectar pantalla
+com.tcl.airplay2                       # AirPlay
+com.amlogic.airplay                    # AirPlay
+com.google.android.apps.mediashell     # Chromecast integrado
+com.google.android.tv.remote.service   # control desde la app del celular
+com.google.android.apps.tv.dreamx      # protector ambiente (se pasa al basico de Android)
+
+# Google: preinstalados que no hacen falta
+android.autoinstalls.config.google.gtvpai   # autoinstala apps de socios
+com.google.android.feedback
+com.google.android.marvin.talkback
