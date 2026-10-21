@@ -15,6 +15,7 @@ $repo = Split-Path -Parent $PSScriptRoot
 $py = Join-Path $repo 'tools\venv\Scripts\python.exe'
 $env:TV_HOST = $TvHost
 $cmds = @(
+    'pm enable com.google.android.tungsten.setupwraith',
     'pm enable com.google.android.apps.tv.launcherx',
     'cmd package set-home-activity --user 0 com.google.android.apps.tv.launcherx/.home.HomeActivity'
 )
