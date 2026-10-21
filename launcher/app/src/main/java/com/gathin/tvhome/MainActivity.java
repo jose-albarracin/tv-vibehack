@@ -238,6 +238,19 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** Desde el PC: am start -n com.gathin.tvhome/.MainActivity --es fondo /sdcard/Pictures/Fondos/foto.jpg */
     private void handleWallpaperIntent(Intent intent) {
         if (intent == null) return;
+        String accion = intent.getStringExtra(QuickMenu.EXTRA_ACCION);
+        if (accion != null) {
+            intent.removeExtra(QuickMenu.EXTRA_ACCION);
+            // Esperar a que el inicio este en pantalla (llega desde el menu rapido sobre otra app).
+            handler.postDelayed(() -> {
+                hideQuickMenu(false);
+                if (QuickMenu.ACCION_PERSONALIZAR.equals(accion)) {
+                    if (settingsOverlay == null || settingsOverlay.getVisibility() != View.VISIBLE) showSettings();
+                } else if (QuickMenu.ACCION_ENTRADAS.equals(accion)) {
+                    showInputs();
+                }
+            }, 350);
+        }
         String path = intent.getStringExtra("fondo");
         if (path == null || path.isEmpty()) return;
         intent.removeExtra("fondo");
@@ -294,6 +307,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int code = event.getKeyCode();
         // Boton de engranaje del control: en esta TCL manda KEYCODE_NOTIFICATION (83); otros mandos, KEYCODE_SETTINGS.
         if (code == KeyEvent.KEYCODE_NOTIFICATION || code == KeyEvent.KEYCODE_SETTINGS) {
+            if (android.util.Log.isLoggable("QuickMenuService", android.util.Log.DEBUG))
+                android.util.Log.d("QuickMenuService", "launcher recibio engranaje action=" + event.getAction());
             if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) toggleQuickMenu();
             return true;
         }
@@ -833,45 +848,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void showQuickMenu() {
+        if (android.util.Log.isLoggable("QuickMenuService", android.util.Log.DEBUG))
+            android.util.Log.d("QuickMenuService", "launcher abre su menu (el servicio no esta activo)");
         if (quickOverlay == null) {
             quickOverlay = findViewById(R.id.quickOverlay);
             quickItems = findViewById(R.id.quickItems);
         }
-        ((TextView) findViewById(R.id.quickClock)).setText(
-                new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new java.util.Date()));
-        ((TextView) findViewById(R.id.quickSubtitle)).setText("Menú rápido · " + wifiName());
-
-        quickItems.removeAllViews();
-        addQuick("🖼️", "Imagen", "Modo de imagen, brillo y retroiluminación", () ->
-                openSetting(Settings.ACTION_DISPLAY_SETTINGS, null));
-        addQuick("🔊", "Sonido", "Modo de sonido, ecualizador y salida de audio", () ->
-                openSetting("com.android.tv.action.VIEW_SOUND_SETTINGS", Settings.ACTION_SOUND_SETTINGS));
-        addQuick("📺", "Entradas", "HDMI y TV en vivo", () -> { hideQuickMenu(false); showInputs(); });
-        addQuick("📶", "Red e Internet", wifiName(), () -> openSetting(Settings.ACTION_WIFI_SETTINGS, null));
-        addQuick("🎮", "Control y Bluetooth", "Emparejar el control, audífonos o parlantes", () ->
-                openSetting("com.android.tv.settings.ACCESSORIES_CONNECTED_DEVICES", Settings.ACTION_BLUETOOTH_SETTINGS));
-        addQuick("🖥️", "Pantalla", "Resolución, tamaño del texto y fotogramas", () -> {
-            hideQuickMenu(false);
-            Intent i = new Intent().setComponent(new ComponentName("com.android.tv.settings",
-                    "com.android.tv.settings.device.displaysound.DisplaySoundActivity"));
-            open(i);
-        });
-        addQuick("✨", "Personalizar inicio", "Fondo, oscurecer, dock y barra superior", () -> {
-            hideQuickMenu(false);
-            showSettings();
-        });
-        addQuick("⚙️", "Todos los ajustes", "Ajustes completos de la TV", () -> openSetting(Settings.ACTION_SETTINGS, null));
-
-        // El foco no sale del panel: ni a los lados ni dando la vuelta arriba/abajo.
-        int n = quickItems.getChildCount();
-        for (int i = 0; i < n; i++) {
-            View v = quickItems.getChildAt(i);
-            v.setNextFocusLeftId(v.getId());
-            v.setNextFocusRightId(v.getId());
-        }
-        View first = quickItems.getChildAt(0), last = quickItems.getChildAt(n - 1);
-        first.setNextFocusUpId(first.getId());
-        last.setNextFocusDownId(last.getId());
+        View first = QuickMenu.populate(this, quickOverlay, () -> hideQuickMenu(false));
 
         setBehindFocusable(false);
         View panel = findViewById(R.id.quickPanel);
@@ -881,16 +864,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         quickOverlay.animate().alpha(1f).setDuration(160).start();
         panel.animate().translationX(0f).setDuration(220).setInterpolator(new DecelerateInterpolator()).start();
         first.requestFocus();
-    }
-
-    private void addQuick(String icon, String title, String desc, Runnable action) {
-        View item = getLayoutInflater().inflate(R.layout.item_quick, quickItems, false);
-        item.setId(View.generateViewId());
-        ((TextView) item.findViewById(R.id.quickIcon)).setText(icon);
-        ((TextView) item.findViewById(R.id.quickTitle)).setText(title);
-        ((TextView) item.findViewById(R.id.quickDesc)).setText(desc);
-        item.setOnClickListener(v -> action.run());
-        quickItems.addView(item);
     }
 
     private void hideQuickMenu(boolean animate) {
@@ -909,26 +882,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             quickOverlay.animate().cancel();
             end.run();
         }
-    }
-
-    /**
-     * Abre un ajuste por su accion. En esta TCL las pantallas de Imagen y Sonido solo se muestran si llegan con
-     * su accion (abiertas por componente se cierran solas); si la accion no existe, se prueba la alternativa.
-     */
-    private void openSetting(String action, String fallbackAction) {
-        hideQuickMenu(false);
-        try {
-            startActivity(new Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-        } catch (Exception e) {
-            if (fallbackAction != null) open(new Intent(fallbackAction));
-            else Toast.makeText(this, "No disponible en esta TV", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private String wifiName() {
-        CharSequence t = btnWifi != null ? btnWifi.getText() : null;
-        if (t == null || t.length() == 0) return getString(R.string.wifi);
-        return t.toString();
     }
 
     private void open(Intent i) {

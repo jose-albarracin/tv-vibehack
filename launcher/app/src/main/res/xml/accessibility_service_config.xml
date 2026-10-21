@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Solo filtra teclas (para el boton de engranaje). Sin lectura del contenido de la pantalla. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagRequestFilterKeyEvents|flagDefault"
+    android:accessibilityFlags="flagRequestFilterKeyEvents"
     android:canRequestFilterKeyEvents="true"
     android:canRetrieveWindowContent="false"
-    android:description="@string/app_name" />
+    android:notificationTimeout="1000"
+    android:description="@string/quick_service_desc" />

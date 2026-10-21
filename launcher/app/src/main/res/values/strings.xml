@@ -16,4 +16,5 @@
     <string name="good_night">Buenas noches</string>
     <string name="ethernet">Ethernet</string>
     <string name="offline">Sin conexión</string>
+    <string name="quick_service_desc">Abre el menú rápido del inicio con el botón de engranaje del control, encima de cualquier app. Solo escucha esa tecla: no lee la pantalla ni lo que escribes.</string>
 </resources>

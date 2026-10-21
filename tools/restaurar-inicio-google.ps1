@@ -1,4 +1,4 @@
-# Vuelve a poner el inicio de Google TV y quita el launcher propio (com.gathin.tvhome).
+﻿# Vuelve a poner el inicio de Google TV y quita el launcher propio (com.gathin.tvhome).
 # No toca las 26 apps desactivadas (para eso: tools\restore.ps1 con config\debloat-tcl-g09.txt).
 #
 # Uso (PowerShell, desde C:\Apps\tv-vibehack):
@@ -15,6 +15,7 @@ $repo = Split-Path -Parent $PSScriptRoot
 $py = Join-Path $repo 'tools\venv\Scripts\python.exe'
 $env:TV_HOST = $TvHost
 $cmds = @(
+    "settings put secure enabled_accessibility_services ''",
     'pm enable com.google.android.tungsten.setupwraith',
     'pm enable com.google.android.apps.tv.launcherx',
     'cmd package set-home-activity --user 0 com.google.android.apps.tv.launcherx/.home.HomeActivity'
