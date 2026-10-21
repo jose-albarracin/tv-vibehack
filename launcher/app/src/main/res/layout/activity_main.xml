@@ -201,4 +201,7 @@
 
     <!-- Selector de fondo propio (encima de Ajustes) -->
     <include layout="@layout/overlay_wallpaper" />
+
+    <!-- Menu rapido del boton de engranaje (encima de todo) -->
+    <include layout="@layout/overlay_quick" />
 </FrameLayout>

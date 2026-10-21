@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -96,6 +97,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View scrim;
     /** Opacidad del velo negro sobre el fondo, de Suave a Maximo. */
     private static final int[] SCRIM_ALPHA = {0x2E, 0x59, 0x80, 0xA6};
+    private View quickOverlay;
+    private LinearLayout quickItems;
     private View wallpaperOverlay;
     private RecyclerView wallGrid;
     private TextView wallPickInfo, wallEmpty;
@@ -288,10 +291,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            int code = event.getKeyCode();
-            // Teclas multimedia sin remapear: Play/Pausa y botones de colores funcionan normal.
+        int code = event.getKeyCode();
+        // Boton de engranaje del control: en esta TCL manda KEYCODE_NOTIFICATION (83); otros mandos, KEYCODE_SETTINGS.
+        if (code == KeyEvent.KEYCODE_NOTIFICATION || code == KeyEvent.KEYCODE_SETTINGS) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) toggleQuickMenu();
+            return true;
         }
+        // Teclas multimedia sin remapear: Play/Pausa y botones de colores funcionan normal.
         return super.dispatchKeyEvent(event);
     }
 
@@ -334,6 +340,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override
     public void onBackPressed() {
+        if (quickOverlay != null && quickOverlay.getVisibility() == View.VISIBLE) {
+            hideQuickMenu(true);
+            return;
+        }
         if (wallpaperOverlay != null && wallpaperOverlay.getVisibility() == View.VISIBLE) {
             hideWallpaperPicker();
             return;
@@ -802,6 +812,123 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         } catch (Exception ignored) {
         }
         if (btnWifi != null) btnWifi.setText(text);
+    }
+
+    // ---- menu rapido (boton de engranaje) --------------------------------------------------------
+
+    private boolean anyPanelOpen() {
+        return (settingsOverlay != null && settingsOverlay.getVisibility() == View.VISIBLE)
+                || (calendarOverlay != null && calendarOverlay.getVisibility() == View.VISIBLE)
+                || (wallpaperOverlay != null && wallpaperOverlay.getVisibility() == View.VISIBLE);
+    }
+
+    private void toggleQuickMenu() {
+        if (quickOverlay != null && quickOverlay.getVisibility() == View.VISIBLE) {
+            hideQuickMenu(true);
+        } else if (anyPanelOpen()) {
+            onBackPressed(); // con otro panel abierto, el engranaje lo cierra primero
+        } else {
+            showQuickMenu();
+        }
+    }
+
+    private void showQuickMenu() {
+        if (quickOverlay == null) {
+            quickOverlay = findViewById(R.id.quickOverlay);
+            quickItems = findViewById(R.id.quickItems);
+        }
+        ((TextView) findViewById(R.id.quickClock)).setText(
+                new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new java.util.Date()));
+        ((TextView) findViewById(R.id.quickSubtitle)).setText("Menú rápido · " + wifiName());
+
+        quickItems.removeAllViews();
+        addQuick("🖼️", "Imagen", "Modo de imagen, brillo y retroiluminación", () ->
+                openSetting(Settings.ACTION_DISPLAY_SETTINGS, null));
+        addQuick("🔊", "Sonido", "Modo de sonido, ecualizador y salida de audio", () ->
+                openSetting("com.android.tv.action.VIEW_SOUND_SETTINGS", Settings.ACTION_SOUND_SETTINGS));
+        addQuick("📺", "Entradas", "HDMI y TV en vivo", () -> { hideQuickMenu(false); showInputs(); });
+        addQuick("📶", "Red e Internet", wifiName(), () -> openSetting(Settings.ACTION_WIFI_SETTINGS, null));
+        addQuick("🎮", "Control y Bluetooth", "Emparejar el control, audífonos o parlantes", () ->
+                openSetting("com.android.tv.settings.ACCESSORIES_CONNECTED_DEVICES", Settings.ACTION_BLUETOOTH_SETTINGS));
+        addQuick("🖥️", "Pantalla", "Resolución, tamaño del texto y fotogramas", () -> {
+            hideQuickMenu(false);
+            Intent i = new Intent().setComponent(new ComponentName("com.android.tv.settings",
+                    "com.android.tv.settings.device.displaysound.DisplaySoundActivity"));
+            open(i);
+        });
+        addQuick("✨", "Personalizar inicio", "Fondo, oscurecer, dock y barra superior", () -> {
+            hideQuickMenu(false);
+            showSettings();
+        });
+        addQuick("⚙️", "Todos los ajustes", "Ajustes completos de la TV", () -> openSetting(Settings.ACTION_SETTINGS, null));
+
+        // El foco no sale del panel: ni a los lados ni dando la vuelta arriba/abajo.
+        int n = quickItems.getChildCount();
+        for (int i = 0; i < n; i++) {
+            View v = quickItems.getChildAt(i);
+            v.setNextFocusLeftId(v.getId());
+            v.setNextFocusRightId(v.getId());
+        }
+        View first = quickItems.getChildAt(0), last = quickItems.getChildAt(n - 1);
+        first.setNextFocusUpId(first.getId());
+        last.setNextFocusDownId(last.getId());
+
+        setBehindFocusable(false);
+        View panel = findViewById(R.id.quickPanel);
+        quickOverlay.setVisibility(View.VISIBLE);
+        quickOverlay.setAlpha(0f);
+        panel.setTranslationX(60 * density);
+        quickOverlay.animate().alpha(1f).setDuration(160).start();
+        panel.animate().translationX(0f).setDuration(220).setInterpolator(new DecelerateInterpolator()).start();
+        first.requestFocus();
+    }
+
+    private void addQuick(String icon, String title, String desc, Runnable action) {
+        View item = getLayoutInflater().inflate(R.layout.item_quick, quickItems, false);
+        item.setId(View.generateViewId());
+        ((TextView) item.findViewById(R.id.quickIcon)).setText(icon);
+        ((TextView) item.findViewById(R.id.quickTitle)).setText(title);
+        ((TextView) item.findViewById(R.id.quickDesc)).setText(desc);
+        item.setOnClickListener(v -> action.run());
+        quickItems.addView(item);
+    }
+
+    private void hideQuickMenu(boolean animate) {
+        if (quickOverlay == null || quickOverlay.getVisibility() != View.VISIBLE) return;
+        Runnable end = () -> {
+            quickOverlay.setVisibility(View.GONE);
+            setBehindFocusable(true);
+        };
+        if (animate) {
+            quickOverlay.animate().alpha(0f).setDuration(140).withEndAction(() -> {
+                end.run();
+                View btn = findViewById(R.id.btnSettings);
+                if (btn != null && getCurrentFocus() == null) btn.requestFocus();
+            }).start();
+        } else {
+            quickOverlay.animate().cancel();
+            end.run();
+        }
+    }
+
+    /**
+     * Abre un ajuste por su accion. En esta TCL las pantallas de Imagen y Sonido solo se muestran si llegan con
+     * su accion (abiertas por componente se cierran solas); si la accion no existe, se prueba la alternativa.
+     */
+    private void openSetting(String action, String fallbackAction) {
+        hideQuickMenu(false);
+        try {
+            startActivity(new Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (Exception e) {
+            if (fallbackAction != null) open(new Intent(fallbackAction));
+            else Toast.makeText(this, "No disponible en esta TV", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String wifiName() {
+        CharSequence t = btnWifi != null ? btnWifi.getText() : null;
+        if (t == null || t.length() == 0) return getString(R.string.wifi);
+        return t.toString();
     }
 
     private void open(Intent i) {
