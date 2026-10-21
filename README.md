@@ -1,3 +1,25 @@
+# tv-vibehack — versión de Jose Daniel (TCL P7K)
+
+Fork privado con cambios para una **TCL 55" P7K con Google TV 12** (G09, Amlogic T963D4), probados en la TV real:
+
+- Launcher limpio en español: sin Stremio, sin internet, sin «seguir viendo» (Android no lo permite a apps instaladas por ADB).
+- Fondo propio (selector en la TV, memorias USB y `tools\poner-fondo.ps1` desde el PC) y oscurecer el fondo en 4 niveles.
+- Menú rápido con el botón ⚙️ del control sobre cualquier app (Imagen y Sonido de TCL, entradas, red, control...), con el servicio `QuickMenuService`, que solo escucha esa tecla.
+- Lista de limpieza `config/debloat-tcl-g09.txt` y scripts para volver atrás.
+
+**En qué TV funciona y modelos candidatos:** [COMPATIBILIDAD.md](COMPATIBILIDAD.md).
+
+| Script (PowerShell) | Para qué |
+|---|---|
+| `tools\restaurar-inicio-google.ps1` | Volver al inicio de Google TV |
+| `tools\restore.ps1 -TvHost <ip> config\debloat-tcl-g09.txt -Stock com.google.android.apps.tv.launcherx` | Reactivar las apps desactivadas |
+| `tools\menu-rapido.ps1 -Activar` / `-Desactivar` | Menú ⚙️ (reactivar tras reinstalar el launcher) |
+| `tools\poner-fondo.ps1 <foto>` | Mandar una foto y ponerla de fondo |
+
+Original: [benfirad/tv-vibehack](https://github.com/benfirad/tv-vibehack), basado en [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv).
+
+---
+
 # tv-vibehack (Stremio & Peek Edition)
 
 **Your TV, minus the ads — with a dynamic Stremio shelf and ultra-low peek dock.**
