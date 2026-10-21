@@ -8,6 +8,8 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -48,6 +50,7 @@ import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -88,7 +91,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View settingsOverlay;
     private TextView btnTopStyleText, btnTopStyleIcon;
     private TextView btnPeekUltra, btnPeekBalanced, btnPeekNone;
-    private TextView btnWallAuto, btnWallDay, btnWallNight;
+    private TextView btnWallAuto, btnWallDay, btnWallNight, btnWallCustom;
+    private TextView[] btnDim;
+    private View scrim;
+    /** Opacidad del velo negro sobre el fondo, de Suave a Maximo. */
+    private static final int[] SCRIM_ALPHA = {0x2E, 0x59, 0x80, 0xA6};
+    private View wallpaperOverlay;
+    private RecyclerView wallGrid;
+    private TextView wallPickInfo, wallEmpty;
+    private WallpaperPickerAdapter wallAdapter;
+    private long customWallpaperStamp = -1;
+    private static final int REQ_READ_IMAGES = 41;
     private SpringAnimation springX, springY;
     private float glassTargetX, glassTargetY;
     private boolean glassShown;
@@ -131,7 +144,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         greeting = findViewById(R.id.greeting);
         btnWifi = findViewById(R.id.btnWifi);
         wallpaper = findViewById(R.id.wallpaper);
+        scrim = findViewById(R.id.scrim);
+        applyScrim(prefs.getInt("scrim_level", 0));
         updateWallpaper();
+        handleWallpaperIntent(getIntent());
 
         grid = findViewById(R.id.grid);
         grid.setLayoutManager(new GridLayoutManager(this, COLUMNS));
@@ -208,6 +224,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 setDockPeek(false, true);
             }
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleWallpaperIntent(intent);
+    }
+
+    /** Desde el PC: am start -n com.gathin.tvhome/.MainActivity --es fondo /sdcard/Pictures/Fondos/foto.jpg */
+    private void handleWallpaperIntent(Intent intent) {
+        if (intent == null) return;
+        String path = intent.getStringExtra("fondo");
+        if (path == null || path.isEmpty()) return;
+        intent.removeExtra("fondo");
+        applyWallpaperFile(new File(path));
     }
 
     @Override
@@ -303,6 +334,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     @Override
     public void onBackPressed() {
+        if (wallpaperOverlay != null && wallpaperOverlay.getVisibility() == View.VISIBLE) {
+            hideWallpaperPicker();
+            return;
+        }
         if (settingsOverlay != null && settingsOverlay.getVisibility() == View.VISIBLE) {
             hideSettings();
             return;
@@ -370,8 +405,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 v.requestFocus();
             });
         }
-        grid.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-        ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        setBehindFocusable(false);
 
         Calendar c = Calendar.getInstance();
         calYear = c.get(Calendar.YEAR);
@@ -386,8 +420,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (calendarOverlay == null || calendarOverlay.getVisibility() != View.VISIBLE) return;
         calendarOverlay.animate().alpha(0f).setDuration(180).withEndAction(() -> {
             calendarOverlay.setVisibility(View.GONE);
-            grid.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-            ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+            setBehindFocusable(true);
             View btn = findViewById(R.id.btnCalendar);
             if (btn != null) btn.requestFocus();
         }).start();
@@ -694,6 +727,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private void updateWallpaper() {
         SharedPreferences prefs = getSharedPreferences("tvhome_prefs", MODE_PRIVATE);
         String themePref = prefs.getString("wallpaper_theme", "auto");
+        if ("custom".equals(themePref) && wallpaper != null) {
+            File f = WallpaperStore.customFile(this);
+            if (f.isFile()) {
+                long stamp = f.lastModified() ^ f.length();
+                if (currentWallpaperRes != -1 || stamp != customWallpaperStamp) {
+                    Bitmap b = WallpaperStore.loadCustom(this);
+                    if (b != null) {
+                        currentWallpaperRes = -1;
+                        customWallpaperStamp = stamp;
+                        wallpaper.animate().cancel();
+                        wallpaper.setImageBitmap(b);
+                        wallpaper.setAlpha(1f);
+                    }
+                }
+                if (currentWallpaperRes == -1) return;
+            }
+            themePref = "auto"; // la foto ya no esta: vuelve a la caricatura
+        }
         boolean isDay;
         if ("day".equals(themePref)) {
             isDay = true;
@@ -888,6 +939,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         updateWifiLabel();
     }
 
+    /** Con un panel abierto, nada de lo que queda detras (apps, lista y barra superior) puede tomar el foco. */
+    private void setBehindFocusable(boolean on) {
+        grid.setDescendantFocusability(on ? ViewGroup.FOCUS_AFTER_DESCENDANTS : ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        grid.setFocusable(on);
+        ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(
+                on ? ViewGroup.FOCUS_AFTER_DESCENDANTS : ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+    }
+
     private void showSettings() {
         if (settingsOverlay == null) {
             settingsOverlay = findViewById(R.id.settingsOverlay);
@@ -901,6 +960,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             btnWallAuto = findViewById(R.id.btnWallAuto);
             btnWallDay = findViewById(R.id.btnWallDay);
             btnWallNight = findViewById(R.id.btnWallNight);
+            btnWallCustom = findViewById(R.id.btnWallCustom);
+            btnWallCustom.setOnClickListener(v -> showWallpaperPicker());
+            btnDim = new TextView[]{findViewById(R.id.btnDim1), findViewById(R.id.btnDim2),
+                    findViewById(R.id.btnDim3), findViewById(R.id.btnDim4)};
+            for (int i = 0; i < btnDim.length; i++) {
+                final int level = i;
+                btnDim[i].setOnClickListener(v -> setScrimLevel(level));
+            }
 
             btnTopStyleText.setOnClickListener(v -> setTopBarStyle(true));
             btnTopStyleIcon.setOnClickListener(v -> setTopBarStyle(false));
@@ -920,8 +987,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         updateSettingsUI();
         // Igual que el calendario: con el panel abierto, el foco no puede bajar a las apps de detrás.
-        grid.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-        ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        setBehindFocusable(false);
         settingsOverlay.setVisibility(View.VISIBLE);
         settingsOverlay.setAlpha(0f);
         settingsOverlay.animate().alpha(1f).setDuration(220).start();
@@ -932,8 +998,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (settingsOverlay == null || settingsOverlay.getVisibility() != View.VISIBLE) return;
         settingsOverlay.animate().alpha(0f).setDuration(180).withEndAction(() -> {
             settingsOverlay.setVisibility(View.GONE);
-            grid.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-            ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+            setBehindFocusable(true);
             View btn = findViewById(R.id.btnSettings);
             if (btn != null) btn.requestFocus();
         }).start();
@@ -952,6 +1017,123 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWallAuto.setSelected("auto".equals(wTheme));
         btnWallDay.setSelected("day".equals(wTheme));
         btnWallNight.setSelected("night".equals(wTheme));
+        btnWallCustom.setSelected("custom".equals(wTheme) && WallpaperStore.hasCustom(this));
+        int dim = getSharedPreferences("tvhome_prefs", MODE_PRIVATE).getInt("scrim_level", 0);
+        for (int i = 0; i < btnDim.length; i++) btnDim[i].setSelected(i == dim);
+    }
+
+    // ---- oscurecer el fondo ----------------------------------------------------------------------
+
+    private void setScrimLevel(int level) {
+        getSharedPreferences("tvhome_prefs", MODE_PRIVATE).edit().putInt("scrim_level", level).apply();
+        applyScrim(level);
+        updateSettingsUI();
+    }
+
+    private void applyScrim(int level) {
+        if (scrim == null) return;
+        int a = SCRIM_ALPHA[Math.max(0, Math.min(SCRIM_ALPHA.length - 1, level))];
+        scrim.setBackgroundColor(a << 24);
+    }
+
+    // ---- fondo propio ----------------------------------------------------------------------------
+
+    private void showWallpaperPicker() {
+        if (wallpaperOverlay == null) {
+            wallpaperOverlay = findViewById(R.id.wallpaperOverlay);
+            wallGrid = findViewById(R.id.wallGrid);
+            wallPickInfo = findViewById(R.id.wallPickInfo);
+            wallEmpty = findViewById(R.id.wallEmpty);
+            wallGrid.setLayoutManager(new GridLayoutManager(this, 4));
+            wallAdapter = new WallpaperPickerAdapter(this::applyWallpaperFile);
+            wallGrid.setAdapter(wallAdapter);
+            findViewById(R.id.btnWallPickClose).setOnClickListener(v -> hideWallpaperPicker());
+        }
+        if (settingsOverlay != null) {
+            ((ViewGroup) settingsOverlay).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            settingsOverlay.setFocusable(false);
+        }
+        wallpaperOverlay.setVisibility(View.VISIBLE);
+        wallpaperOverlay.setAlpha(0f);
+        wallpaperOverlay.animate().alpha(1f).setDuration(200).start();
+        findViewById(R.id.btnWallPickClose).requestFocus();
+        if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            wallPickInfo.setText("Hace falta permiso para leer las fotos…");
+            requestPermissions(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQ_READ_IMAGES);
+            return;
+        }
+        loadWallpaperList();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQ_READ_IMAGES || wallpaperOverlay == null) return;
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            loadWallpaperList();
+        } else {
+            wallPickInfo.setText("Sin permiso no puedo ver las fotos. Vuelve a intentarlo y elige «Permitir».");
+        }
+    }
+
+    private void loadWallpaperList() {
+        wallPickInfo.setText("Buscando fotos en la TV y en memorias USB…");
+        wallEmpty.setVisibility(View.GONE);
+        new Thread(() -> {
+            List<File> found = WallpaperStore.findImages();
+            runOnUiThread(() -> {
+                if (wallpaperOverlay == null || wallpaperOverlay.getVisibility() != View.VISIBLE) return;
+                wallAdapter.setFiles(found);
+                if (found.isEmpty()) {
+                    wallPickInfo.setText("Busqué en Imágenes, DCIM, Descargas y memorias USB");
+                    wallEmpty.setVisibility(View.VISIBLE);
+                } else {
+                    wallPickInfo.setText(found.size() + (found.size() == 1 ? " foto" : " fotos")
+                            + " · Imágenes, DCIM, Descargas y memorias USB · OK para usarla de fondo");
+                    wallGrid.post(() -> {
+                        RecyclerView.ViewHolder vh = wallGrid.findViewHolderForAdapterPosition(0);
+                        if (vh != null) vh.itemView.requestFocus();
+                    });
+                }
+            });
+        }).start();
+    }
+
+    private void hideWallpaperPicker() {
+        if (wallpaperOverlay == null || wallpaperOverlay.getVisibility() != View.VISIBLE) return;
+        wallpaperOverlay.animate().alpha(0f).setDuration(160).withEndAction(() -> {
+            wallpaperOverlay.setVisibility(View.GONE);
+            wallAdapter.setFiles(new ArrayList<>());
+            wallAdapter.release();
+            if (settingsOverlay != null) {
+                ((ViewGroup) settingsOverlay).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+                settingsOverlay.setFocusable(true);
+                if (btnWallCustom != null) btnWallCustom.requestFocus();
+            }
+        }).start();
+    }
+
+    /** Recorta y guarda la foto en segundo plano, y la pone de fondo. */
+    private void applyWallpaperFile(File f) {
+        if (wallPickInfo != null) wallPickInfo.setText("Preparando «" + f.getName() + "»…");
+        new Thread(() -> {
+            boolean ok;
+            try { ok = WallpaperStore.importImage(this, f); } catch (Throwable t) { ok = false; }
+            final boolean done = ok;
+            runOnUiThread(() -> {
+                if (done) {
+                    getSharedPreferences("tvhome_prefs", MODE_PRIVATE).edit().putString("wallpaper_theme", "custom").apply();
+                    customWallpaperStamp = -1;
+                    updateWallpaper();
+                    updateSettingsUI();
+                    Toast.makeText(this, "Fondo cambiado", Toast.LENGTH_SHORT).show();
+                    hideWallpaperPicker();
+                } else {
+                    Toast.makeText(this, "No pude abrir esa foto", Toast.LENGTH_LONG).show();
+                    if (wallPickInfo != null) wallPickInfo.setText("No pude abrir «" + f.getName() + "». Prueba con otra.");
+                }
+            });
+        }).start();
     }
 
     private void setTopBarStyle(boolean showText) {

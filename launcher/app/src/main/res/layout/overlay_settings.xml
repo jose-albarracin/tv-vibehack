@@ -284,7 +284,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/outfit"
                         android:fontVariationSettings="'wght' 600"
-                        android:text="Fondo de pantalla (Gumball HD)"
+                        android:text="Fondo de pantalla"
                         android:textColor="#FFFFFFFF"
                         android:textSize="17sp" />
 
@@ -294,7 +294,7 @@
                         android:layout_marginTop="2dp"
                         android:layout_marginBottom="14dp"
                         android:fontFamily="@font/outfit"
-                        android:text="Sala de caricatura que cambia de día a noche"
+                        android:text="Caricatura de día y noche, o una foto tuya (USB o desde el PC)"
                         android:textColor="#80FFFFFF"
                         android:textSize="13sp" />
 
@@ -308,7 +308,8 @@
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
-                            android:layout_marginEnd="6dp"
+                            android:layout_marginStart="0dp"
+                            android:layout_marginEnd="4dp"
                             android:background="@drawable/setting_option_bg"
                             android:clickable="true"
                             android:focusable="true"
@@ -318,8 +319,7 @@
                             android:text="🌗 Automático"
                             android:textColor="@drawable/setting_option_text"
                             android:textSize="13sp"
-                            android:nextFocusDown="@+id/btnSysSettings" />
-
+                            android:nextFocusDown="@+id/btnDim1" />
                         <TextView
                             android:id="@+id/btnWallDay"
                             android:layout_width="0dp"
@@ -336,14 +336,14 @@
                             android:text="☀️ Día"
                             android:textColor="@drawable/setting_option_text"
                             android:textSize="13sp"
-                            android:nextFocusDown="@+id/btnSysSettings" />
-
+                            android:nextFocusDown="@+id/btnDim2" />
                         <TextView
                             android:id="@+id/btnWallNight"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
-                            android:layout_marginStart="6dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
                             android:background="@drawable/setting_option_bg"
                             android:clickable="true"
                             android:focusable="true"
@@ -353,6 +353,113 @@
                             android:text="🌙 Noche"
                             android:textColor="@drawable/setting_option_text"
                             android:textSize="13sp"
+                            android:nextFocusDown="@+id/btnDim3" />
+                        <TextView
+                            android:id="@+id/btnWallCustom"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="0dp"
+                            android:background="@drawable/setting_option_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:fontFamily="@font/outfit"
+                            android:fontVariationSettings="'wght' 500"
+                            android:text="🖼️ Mi foto"
+                            android:textColor="@drawable/setting_option_text"
+                            android:textSize="13sp"
+                            android:nextFocusDown="@+id/btnDim4" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="10dp"
+                        android:fontFamily="@font/outfit"
+                        android:fontVariationSettings="'wght' 600"
+                        android:text="Oscurecer el fondo (para leer mejor los textos)"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="14sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btnDim1"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="0dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/setting_option_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:fontFamily="@font/outfit"
+                            android:fontVariationSettings="'wght' 500"
+                            android:text="Suave"
+                            android:textColor="@drawable/setting_option_text"
+                            android:textSize="13sp"
+                            android:nextFocusUp="@+id/btnWallAuto"
+                            android:nextFocusDown="@+id/btnSysSettings" />
+                        <TextView
+                            android:id="@+id/btnDim2"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/setting_option_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:fontFamily="@font/outfit"
+                            android:fontVariationSettings="'wght' 500"
+                            android:text="Medio"
+                            android:textColor="@drawable/setting_option_text"
+                            android:textSize="13sp"
+                            android:nextFocusUp="@+id/btnWallDay"
+                            android:nextFocusDown="@+id/btnSysSettings" />
+                        <TextView
+                            android:id="@+id/btnDim3"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/setting_option_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:fontFamily="@font/outfit"
+                            android:fontVariationSettings="'wght' 500"
+                            android:text="Fuerte"
+                            android:textColor="@drawable/setting_option_text"
+                            android:textSize="13sp"
+                            android:nextFocusUp="@+id/btnWallNight"
+                            android:nextFocusDown="@+id/btnSysSettings" />
+                        <TextView
+                            android:id="@+id/btnDim4"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="0dp"
+                            android:background="@drawable/setting_option_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:fontFamily="@font/outfit"
+                            android:fontVariationSettings="'wght' 500"
+                            android:text="Máximo"
+                            android:textColor="@drawable/setting_option_text"
+                            android:textSize="13sp"
+                            android:nextFocusUp="@+id/btnWallCustom"
                             android:nextFocusDown="@+id/btnSysSettings" />
                     </LinearLayout>
                 </LinearLayout>
@@ -404,7 +511,7 @@
                             android:text="⚙️ Ajustes de la TV"
                             android:textColor="@drawable/setting_option_text"
                             android:textSize="13sp"
-                            android:nextFocusUp="@+id/btnWallAuto" />
+                            android:nextFocusUp="@+id/btnDim1" />
 
                         <TextView
                             android:id="@+id/btnSysWifi"
@@ -422,7 +529,7 @@
                             android:text="📶 Wi-Fi"
                             android:textColor="@drawable/setting_option_text"
                             android:textSize="13sp"
-                            android:nextFocusUp="@+id/btnWallAuto" />
+                            android:nextFocusUp="@+id/btnDim2" />
 
                         <TextView
                             android:id="@+id/btnSysApps"
@@ -439,7 +546,7 @@
                             android:text="📱 Aplicaciones"
                             android:textColor="@drawable/setting_option_text"
                             android:textSize="13sp"
-                            android:nextFocusUp="@+id/btnWallAuto" />
+                            android:nextFocusUp="@+id/btnDim3" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

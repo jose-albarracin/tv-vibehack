@@ -198,4 +198,7 @@
 
     <!-- Settings Fullscreen Overlay -->
     <include layout="@layout/overlay_settings" />
+
+    <!-- Selector de fondo propio (encima de Ajustes) -->
+    <include layout="@layout/overlay_wallpaper" />
 </FrameLayout>
