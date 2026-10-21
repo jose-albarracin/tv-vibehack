@@ -919,6 +919,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
 
         updateSettingsUI();
+        // Igual que el calendario: con el panel abierto, el foco no puede bajar a las apps de detrás.
+        grid.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         settingsOverlay.setVisibility(View.VISIBLE);
         settingsOverlay.setAlpha(0f);
         settingsOverlay.animate().alpha(1f).setDuration(220).start();
@@ -929,6 +932,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (settingsOverlay == null || settingsOverlay.getVisibility() != View.VISIBLE) return;
         settingsOverlay.animate().alpha(0f).setDuration(180).withEndAction(() -> {
             settingsOverlay.setVisibility(View.GONE);
+            grid.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
+            ((ViewGroup) findViewById(R.id.topButtons)).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
             View btn = findViewById(R.id.btnSettings);
             if (btn != null) btn.requestFocus();
         }).start();
