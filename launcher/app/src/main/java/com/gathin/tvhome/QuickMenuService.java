@@ -16,7 +16,8 @@ import android.widget.FrameLayout;
 /**
  * Menu rapido encima de cualquier app.
  *
- * Solo actua con el boton de engranaje del control (KEYCODE_NOTIFICATION 83 en esta TCL, o KEYCODE_SETTINGS);
+ * Solo actua con el boton de engranaje del control (KEYCODE_NOTIFICATION 83 en esta TCL, o KEYCODE_SETTINGS)
+ * y con el boton Guia (abre la TV en vivo, que antes atendia launcherx; dentro de la TV, TCL abre su guia);
  * cualquier otra tecla pasa intacta. No lee el contenido de la pantalla (canRetrieveWindowContent=false), no tiene
  * internet y no guarda nada. El panel se dibuja como capa de accesibilidad, asi la app de atras sigue (el video no
  * se pausa).
@@ -51,11 +52,20 @@ public class QuickMenuService extends AccessibilityService implements QuickMenu.
     @Override
     protected void onServiceConnected() {
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        if (dbg()) Log.d(TAG, "servicio conectado");
     }
+
+    /** Tecla propia de TCL para el boton Guia/EPG del control (scanCode 365). */
+    private static final int KEYCODE_TCL_EPG = 4001;
+    private static final String LIVE_TV_PKG = "com.tcl.tv";
+    /** App de delante, segun los eventos de cambio de ventana (solo el nombre del paquete). */
+    private String topPkg = "";
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
         int code = event.getKeyCode();
+        if (dbg()) Log.d(TAG, "tecla " + code + " scan=" + event.getScanCode() + " action=" + event.getAction() + " top=" + topPkg);
+        if (code == KEYCODE_TCL_EPG || code == KeyEvent.KEYCODE_GUIDE) return onGuideKey(event);
         if (code != KeyEvent.KEYCODE_NOTIFICATION && code != KeyEvent.KEYCODE_SETTINGS) return false;
         if (dbg()) Log.d(TAG, "engranaje action=" + event.getAction() + " repeat=" + event.getRepeatCount() + " abierto=" + (overlay != null));
         if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
@@ -162,8 +172,52 @@ public class QuickMenuService extends AccessibilityService implements QuickMenu.
         trace("close");
     }
 
+    /**
+     * Boton Guia: fuera de la TV en vivo, TCL lo reenvia como KEYCODE_GUIDE al receptor global de launcherx (el
+     * inicio de Google TV, desactivado), asi que sin esto no hace nada. Aqui abre la TV en vivo; con la TV en vivo
+     * delante se deja pasar y TCL abre su guia de canales.
+     */
+    private boolean onGuideKey(KeyEvent event) {
+        if (LIVE_TV_PKG.equals(topPkg)) return false;
+        if (dbg()) Log.d(TAG, "guia action=" + event.getAction() + " top=" + topPkg);
+        if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+            if (overlay != null) close();
+            openLiveTv(this);
+        }
+        return true;
+    }
+
+    /** Abre la TV en vivo de TCL (ultimo canal); si no esta, su guia de canales (app://com.tcl.tv/epg). */
+    static void openLiveTv(android.content.Context ctx) {
+        android.content.Intent live = ctx.getPackageManager().getLeanbackLaunchIntentForPackage(LIVE_TV_PKG);
+        if (live == null) live = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse("app://" + LIVE_TV_PKG + "/epg"));
+        live.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            ctx.startActivity(live);
+        } catch (Exception e) {
+            Log.w(TAG, "no pude abrir la TV en vivo", e);
+        }
+    }
+
     @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {}
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (event != null && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && event.getPackageName() != null) {
+            String pkg = event.getPackageName().toString();
+            CharSequence cls = event.getClassName();
+            if (dbg()) Log.d(TAG, "ventana " + pkg + "/" + cls);
+            // Solo cuenta una Activity de verdad: com.tcl.tv tambien abre ventanas de fondo (servicios, avisos),
+            // y el panel del menu rapido no es una Activity. El inicio (nuestra MainActivity) si cuenta.
+            if (cls == null) return;
+            try {
+                getPackageManager().getActivityInfo(new android.content.ComponentName(pkg, cls.toString()), 0);
+                topPkg = pkg;
+            } catch (Exception notAnActivity) {
+                // dialogo, toast o capa del sistema: no cambia la app de delante
+            }
+        }
+    }
 
     @Override
     public void onInterrupt() {
